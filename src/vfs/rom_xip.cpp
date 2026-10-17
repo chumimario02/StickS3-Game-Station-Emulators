@@ -38,6 +38,43 @@ int xip_map_rom_partition(const char *part_name, size_t rom_size_effective)
     return 0;
 }
 
+/* Same as above, but the ROM starts at 'offset' inside the partition.
+ * The whole partition is mapped (64KB aligned at offset 0), so 'offset' can be any value. */
+int xip_map_rom_partition_at(const char *part_name, size_t offset, size_t rom_size)
+{
+    const esp_partition_t *p;
+    const void *ptr = NULL;
+
+    if (part_name == NULL)
+        part_name = "rom";
+
+    p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, part_name);
+    if (!p) {
+        ESP_LOGE("ROM_XIP", "Partition '%s' not found", part_name);
+        return -1;
+    }
+
+    if (rom_size == 0 || offset + rom_size > p->size) {
+        ESP_LOGE("ROM_XIP", "Invalid ROM range");
+        return -3;
+    }
+
+    if (g_rom_mmap) {
+        spi_flash_munmap(g_rom_mmap);
+        g_rom_mmap = 0;
+    }
+
+    if (esp_partition_mmap(p, 0, p->size, SPI_FLASH_MMAP_DATA, &ptr, &g_rom_mmap) != ESP_OK) {
+        ESP_LOGE("ROM_XIP", "esp_partition_mmap() failed");
+        return -2;
+    }
+
+    g_rom_ptr  = (const uint8_t *)ptr + offset;
+    g_rom_size = rom_size;
+
+    return 0;
+}
+
 const uint8_t* get_rom_ptr(void) { 
     return g_rom_ptr; 
 }

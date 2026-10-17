@@ -28,6 +28,9 @@
 #include "esp_task_wdt.h"
 #include "share/input.h"
 #include "share/emu_log_cpp.h"
+#ifdef TARGET_STICKS3
+#include "sticks3/sticks3_flow.h"
+#endif
 
 void setup() {
   // Set high priority for the current task (where the emulator will run)
@@ -45,10 +48,26 @@ void setup() {
   auto cfg = M5.config();
   cfg.output_power = true;
   M5Cardputer.begin(cfg);
+#ifdef TARGET_STICKS3
+  M5Cardputer.Display.setRotation(1); // landscape 240x135 like the Cardputer (use 3 if upside down)
+#endif
   CardputerInput input;
-  SdService sd;
   CardputerView display;
   display.initialize();
+
+  std::string romPath;
+
+#ifdef TARGET_STICKS3
+  // ROM library stored in flash: pick a ROM (or upload new ones over WiFi).
+  // On success the ROM is already mapped through XIP.
+  std::string flashRomName;
+  while (!sticks3_pick_rom(flashRomName)) {
+    delay(500);
+  }
+  romPath = "/xip/" + flashRomName; // the XIP VFS accepts any file name
+  EMU_LOG("Selected ROM: %s\n", romPath.c_str());
+#else
+  SdService sd;
 
   // SD
   while (!sd.begin()) {
@@ -57,7 +76,6 @@ void setup() {
     display.subMessage("Insert SD card", 0);
   }
 
-  std::string romPath;
   auto romFolder = getRomFolderFromNvs(display, input, sd);
   romFolder = romFolder.empty() ? "/" : romFolder;
 
@@ -114,6 +132,8 @@ void setup() {
       delay(1500);
     }
   }
+#endif
+
   // Register the XIP VFS
   vfs_xip_register();
   // Check the extension to choose the emulator
@@ -148,17 +168,21 @@ void setup() {
     delay(1);
   }
 
-  // Save last game to nvs
+#ifndef TARGET_STICKS3
+  // Save last game to nvs (the StickS3 flow keeps its own "last ROM" entry)
   if (ext != ROM_TYPE_UNKNOWN) {
       saveLastGameToNvs(romPath);
   }
+#endif
 
   // Prepare rom filename for emulators
   auto pos = romPath.find_last_of("/\\");
   std::string romName = (pos == std::string::npos) ? romPath : romPath.substr(pos + 1);
 
-  // Initialize I2C M5Stack JoyV2 if any
+#ifndef TARGET_STICKS3
+  // Initialize I2C M5Stack JoyV2 if any (Cardputer Grove pins, not valid on the StickS3)
   share::detectI2cPad();
+#endif
   
   EMU_LOG("HEAP BEFORE EMU: %u bytes\n", esp_get_free_heap_size());
   EMU_LOG("MAX BLOCK BEFORE EMU: %u bytes\n", heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
