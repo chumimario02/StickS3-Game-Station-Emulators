@@ -1,0 +1,12 @@
+{
+  "name": "M5CardputerShim",
+  "description": "M5Cardputer API compatibility shim for M5Stack StickS3 (buttons + BLE HID keyboard)",
+  "version": "0.1.0",
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"],
+  "headers": "M5Cardputer.h",
+  "dependencies": {
+    "M5Unified": "*",
+    "M5GFX": "*"
+  }
+}
