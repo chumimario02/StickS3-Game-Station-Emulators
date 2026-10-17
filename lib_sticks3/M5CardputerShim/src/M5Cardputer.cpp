@@ -2,6 +2,10 @@
 
 m5::M5_CARDPUTER M5Cardputer;
 
+// Virtual zoom keys (8BitDo Micro L / R in Keyboard mode)
+static constexpr uint8_t ZOOM_OUT_KEY = 'q';  // L -> FN + ','
+static constexpr uint8_t ZOOM_IN_KEY  = 'w';  // R -> FN + '/'
+
 // ---------------------------------------------------------------------------
 // M5_CARDPUTER
 // ---------------------------------------------------------------------------
@@ -84,6 +88,11 @@ bool Keyboard_Class::isKeyPressed(char c)
     if (i >= 128) return false;
 
     if (_ble[i]) return true;
+
+    // Zoom keys: L ('q') acts as FN + ',' and R ('w') acts as FN + '/'
+    if (c == ',' && _ble[ZOOM_OUT_KEY]) return true;
+    if (c == '/' && _ble[ZOOM_IN_KEY])  return true;
+
     if (_btnA && c == 'l') return true;  // front button = A
     if (_btnB && c == '.') return true;  // side button  = down / next
     return false;
@@ -112,6 +121,8 @@ void Keyboard_Class::updateKeysState()
     _state.del   = _bleDel;
     _state.tab   = _bleTab;
     _state.space = isKeyPressed(' ');
+    // FN is "pressed" while a zoom key (L / R) is held
+    _state.fn    = _ble[ZOOM_OUT_KEY] || _ble[ZOOM_IN_KEY];
 
     if (_state.enter != _prevEnter) { changed = true; _prevEnter = _state.enter; }
     if (_state.del   != _prevDel)   { changed = true; _prevDel   = _state.del; }

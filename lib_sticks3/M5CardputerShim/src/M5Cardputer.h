@@ -13,6 +13,8 @@
  *   D-pad  : ';' up, '.' down, ',' left, '/' right   (arrow keys are mapped to these)
  *   A / B  : 'l' (or 'j') / 'k'
  *   START  : '1'      SELECT : '2'
+ *   ZOOM   : 'q' (L button) = zoom out, 'w' (R button) = zoom in
+ *            (the shim turns them into FN + ',' / FN + '/', which is what the emulators expect)
  * In 8BitDo Ultimate Software (Keyboard mode) map the Micro buttons to those keys.
  *
  * StickS3 hardware buttons:
